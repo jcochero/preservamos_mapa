@@ -17,7 +17,9 @@ library(shinycssloaders) #Spinner de carga
 
 ##### UI #######
 ui <- fluidPage(
-
+  tags$head(
+    tags$title("PreserVamos - Ciencia ciudadana en ambientes acuáticos")
+  ),
   titlePanel(
     div(
       # Estilos para el encabezado: mostrar logo y mensajes en una estructura flexible
@@ -42,9 +44,14 @@ ui <- fluidPage(
       div(
         # Texto con enlace a la derecha del encabezado
         style = "flex: 1; text-align: right; font-size: 12px;",
-        p("¿Querés saber cómo está hecho este mapa interactivo? ¡El código es abierto y lo podés ver ",
+        p("¿Querés saber cómo está hecho este mapa interactivo? "),
+        p("¡El código es abierto y lo podés ver ",
+          a(href = "https://limnolab.shinyapps.io/preservamos_mapa/", "acá!", target = "_blank")
+        ),
+        p("También puedes descargar el set de datos completos al momento, son abiertos, desde ",
           a(href = "https://preservamos.ar", "acá!", target = "_blank")
-        )
+        ),
+        downloadButton("download_data", "Descargar datos")
       )
     )
   ),
@@ -57,6 +64,12 @@ ui <- fluidPage(
     "))
   ),
   fluidRow(
+    tags$style(HTML("
+    #correlation_explanation {
+      margin-bottom: 30px; 
+      font-weight: bold;
+    }
+     ")),
     # Fila superior: Filtros, gráficos y mapa
     column(3,
            wellPanel(
@@ -856,17 +869,19 @@ server <- function(input, output, session) {
     
     # Crea el gráfico
     p <- ggplot(corr_df, aes_string(x = x_var, y = y_var)) +
-      geom_point(color = "blue", alpha = 0.6) +  # Blue data points
-      geom_smooth(method = "lm", color = "black", linetype = "dashed", size = 0.8, se = FALSE) +  # Dashed regression line
+      geom_point(color = "blue", alpha = 0.6) +  # Blue points
+      geom_smooth(method = "lm", color = "black", linetype = "dashed", size = 0.8, se = FALSE) +  # Regression line
       theme_minimal() +  # Minimal theme
       labs(
         x = x_var,  # X-axis label
         y = names(valorind_labels)[valorind_labels == input$corr_field]  # Y-axis label
       ) +
       theme(
-        plot.margin = unit(c(1, 1, 1, 1), "cm"),  # Increase margins for more space
-        axis.title = element_text(size = 14),  # Increase axis label size
-        plot.title = element_text(size = 16, hjust = 0.5)  # Center title and make it larger
+        plot.margin = unit(c(1, 1, 1, 1), "cm"),  # Increase margins
+        axis.title = element_text(size = 10),  # Smaller axis labels
+        plot.title = element_text(size = 16, hjust = 0.5),  # Centered title
+        panel.background = element_rect(fill = "transparent", color = NA),  # Transparent background
+        plot.background = element_rect(fill = "transparent", color = NA)  # Transparent plot background
       )
     
     # Personaliza el título con la ecuación y el R²
@@ -880,10 +895,14 @@ server <- function(input, output, session) {
             "y = ", round(intercept, 2), " + ", round(slope, 2), "x | R² = ", round(r_squared, 2),
             '</sup>'
           ),
-          x = 0.1,  # Posición horizontal del título
-          y = 0.95,  # Posición vertical del título
-          font = list(size = 16)  # Tamaño de la fuente del título
-        )
+          x = 0.1,  # Horizontal title position
+          y = 0.95,  # Vertical title position
+          font = list(size = 16)  # Title font size
+        ),
+        plot_bgcolor = "rgba(0, 0, 0, 0)",  # Transparent plot background
+        paper_bgcolor = "rgba(0, 0, 0, 0)",  # Transparent overall background
+        xaxis = list(titlefont = list(size = 10)),  # Smaller X-axis labels
+        yaxis = list(titlefont = list(size = 10))  # Smaller Y-axis labels
       )
     
     p_plotly  # Devuelve el gráfico interactivo
@@ -914,18 +933,21 @@ server <- function(input, output, session) {
       # Si R² es menor a 0.25, la relación es débil
       paste("Hay una relación débil entre las variables. Esto quiere decir que el Índice de Ribera y el", 
             names(valorind_labels)[valorind_labels == input$corr_field], 
-            "no están bien relacionados en esta área.")
+            "no están bien relacionados en este área.")
     } else if (r_squared < 0.7) {
       # Si R² está entre 0.25 y 0.7, la relación es moderada
       paste("Hay una relación moderada entre las variables. Esto quiere decir que el Índice de Ribera y el", 
             names(valorind_labels)[valorind_labels == input$corr_field], 
-            "están moderadamente relacionados en esta área.")
+            "están moderadamente relacionados en este área.")
     } else {
       # Si R² es mayor a 0.7, la relación es fuerte
       paste("Hay una relación fuerte entre las variables. Esto quiere decir que el Índice de Ribera y el", 
             names(valorind_labels)[valorind_labels == input$corr_field], 
-            "están bien relacionados en esta área.")
+            "están bien relacionados en este área.")
     }
+    
+    # Wrap the explanation text in HTML and add some space below
+    HTML(paste0("<p style='margin-bottom: 30px;'>", explanation, "</p>"))
     
     return(explanation)  # Devuelve el texto de explicación
   })
@@ -971,6 +993,17 @@ server <- function(input, output, session) {
                "<strong>Promedio del Índice de Calidad de Ribera:</strong>", round(avg_indice, 2), "<br><br>",
                explanation))
   })
+  
+  ####### BOTON PARA BAJAR LOS DATOS
+  
+  output$download_data <- downloadHandler(
+    filename = function() {
+      paste("preservamos-", Sys.Date(), ".csv", sep = "")
+    },
+    content = function(file) {
+      write.csv(filtered_data(), file, row.names = FALSE)  # Saves the dataset as a CSV
+    }
+  )
   
   ####### HAY QUE MATAR LA CONEXION A MYSQL
     killDbConnections <- function () {
