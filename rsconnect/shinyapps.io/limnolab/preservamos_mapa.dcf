@@ -1,0 +1,12 @@
+name: preservamos_mapa
+title: preservamos_mapa
+username: limnolab
+account: limnolab
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 12736800
+bundleId: 9134755
+url: https://limnolab.shinyapps.io/preservamos_mapa/
+version: 1
+asMultiple: FALSE
+asStatic: FALSE

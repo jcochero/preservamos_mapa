@@ -188,7 +188,7 @@ ui <- fluidPage(
     ), 
     div(
       # Texto con enlace a la derecha del encabezado
-      style = "flex: 1; text-align: right; font-size: 12px;",
+      style = "flex: 1; text-align: center; font-size: 12px; align-items: center; ",
       p("Las fotografías fueron tomadas de las Fichas de Ecorregiones generadas por ",
         a(href = "https://www.sib.gob.ar/portal/wp-content/uploads/2021/10/fichas_ecorregiones.pdf", "Parques Nacionales de Argentina", target = "_blank")
       )
@@ -207,7 +207,7 @@ server <- function(input, output, session) {
     title = "¡Bienvenido/a al mapa interactivo de PreserVamos!",
     tags$div(
       # Imagen del logo de PreserVamos
-      tags$img(src = "https://preservamos.ar/wp-content/uploads/2022/02/Logo_preservamos.png", height = "300px", width = "600px"),
+      tags$img(src = "https://preservamos.ar/wp-content/uploads/2022/02/Logo_preservamos.png", height = "auto", width = "100%"),
       br(),  # Salto de línea
       # Explicación sobre el mapa y su uso
       p("Este mapa te permitirá visualizar la calidad del ambiente de ribera de distintos cursos de agua del país (ríos, lagos, estuarios)."), 
