@@ -14,9 +14,14 @@ library(httr)         # Para interactuar con APIs web, como la de iNaturalist
 library(shinyjs)      # Para agregar funcionalidades JavaScript a las aplicaciones Shiny
 library(shinybusy)    # Para mostrar indicadores de carga durante operaciones largas
 library(shinycssloaders) #Spinner de carga
+library(rintrojs) #ayuda de inicio
 
 ##### UI #######
 ui <- fluidPage(
+  # Inicia la funcionalidad de introjs
+  introjsUI(),
+
+  # HEAD
   tags$head(
     tags$title("PreserVamos - Ciencia ciudadana en ambientes acuáticos")
   ),
@@ -24,33 +29,23 @@ ui <- fluidPage(
     div(
       # Estilos para el encabezado: mostrar logo y mensajes en una estructura flexible
       style = "display: flex; justify-content: space-between; align-items: center; text-align: center;",
+      
+      # Logo de la ecorregión a la izquierda
       div(
-        # Texto a la izquierda del encabezado
-        p(
-          style = "flex: 1; text-align: right; font-size: 12px;",
-          "Todos los datos de este mapa fueron generados con participación ciudadana",
-        ),
-
-        p("Conocé mas del proyecto PreserVamos en nuestro ",
-          style = "flex: 1; text-align: right; font-size: 12px;",
-          a(href = "https://preservamos.ar", "sitio web", target = "_blank")
-        )
+        imageOutput("ecoregion_logo", height = "auto", width = "100%"),
+        class = "ecoregion-logo"
       ),
+      
+      # Logo principal en el centro del encabezado
       div(
-        # Logo en el centro del encabezado
         style = "flex: 1; text-align: center;",
         img(src = "https://preservamos.ar/wp-content/uploads/2022/02/Logo_preservamos.png", height = "100px", width = "auto", style = "display: block; margin: auto;")
       ),
+      
+      # Texto con enlace y botón de descarga a la derecha
       div(
-        # Texto con enlace a la derecha del encabezado
         style = "flex: 1; text-align: right; font-size: 12px;",
-        p("¿Querés saber cómo está hecho este mapa interactivo? "),
-        p("¡El código es abierto y lo podés ver ",
-          a(href = "https://limnolab.shinyapps.io/preservamos_mapa/", "acá!", target = "_blank")
-        ),
-        p("También puedes descargar el set de datos completos al momento, son abiertos, desde ",
-          a(href = "https://preservamos.ar", "acá!", target = "_blank")
-        ),
+        p("Podés descargar el set de datos completos al momento, son abiertos!"),
         downloadButton("download_data", "Descargar datos")
       )
     )
@@ -73,17 +68,14 @@ ui <- fluidPage(
     # Fila superior: Filtros, gráficos y mapa
     column(3,
            wellPanel(
+             id = "info_panel",
              # Selector de ecorregión y tipo de río
              uiOutput("ecorregion_selector"),
-             # Logo for the ecoregion
-             tags$div(
-                   imageOutput("ecoregion_logo", height = "auto", width = "100%"),
-                   class = "ecoregion-logo"
-                 ),
              selectInput("river_type", "Selecciona el tipo de cuerpo de agua:", choices = NULL),
              uiOutput("date_range_ui")  # Selector de rango de fechas
            ),
            wellPanel(
+             id = "corr_panel",
              # Selector de campo para correlación y gráfico de correlación
              selectInput("corr_field", "¿Con qué quieres relacionar al índice?", choices = NULL),
              htmlOutput("correlation_explanation"),  # Explicación de la correlación
@@ -100,6 +92,7 @@ ui <- fluidPage(
     
     column(3,
            wellPanel(
+             id = "histo_panel",
              # Histograma para visualizar los datos
              plotlyOutput("histogram", height = 300)
            ),
@@ -109,6 +102,7 @@ ui <- fluidPage(
              htmlOutput("histogram_explanation")  # Interpretación dinámica del histograma
            ),
            wellPanel(
+             id = "inat_panel",
              # Etiqueta y logo sobre los botones de taxones
              tags$div(
                style = "text-align: center; margin-bottom: 10px;",
@@ -161,6 +155,19 @@ ui <- fluidPage(
                   padding: 5px;
                   box-sizing: border-box;
                 }
+                .explore-button {
+                  background-color: #28a745; /* Verde */
+                  color: white; /* Texto blanco */
+                  border: none; /* Sin borde */
+                  padding: 10px 20px; /* Espaciado interno */
+                  font-size: 16px; /* Tamaño de fuente */
+                  cursor: pointer; /* Cambia el cursor al pasar sobre el botón */
+                  border-radius: 5px; /* Bordes redondeados */
+                  transition: background-color 0.3s; /* Transición suave para el hover */
+                }
+                  .explore-button:hover {
+                  background-color: #218838; /* Color más oscuro al pasar el mouse */
+                }
               "))
              )
            )
@@ -168,11 +175,25 @@ ui <- fluidPage(
   ),
   
   fluidRow(
-    # Fila inferior: Licencia Creative Commons
+    id = "footer",
     div(
-      style = "display: flex; justify-content: space-between; align-items: center; text-align: center;",
+      style = "display: flex; justify-content: space-between; align-items: center; text-align: center; width: 100%;",
+      
+      # "Todos los datos de este mapa..." 
       div(
-        style = "flex: 1; text-align: center; font-size: 12px; margin-left:30px;",
+        style = "flex: 1; text-align: left; font-size: 14px; margin-left: 20px;",
+        p(
+          "Todos los datos de este mapa fueron generados con participación ciudadana",
+        ),
+        p(
+          "Conocé más del proyecto PreserVamos en nuestro ",
+          a(href = "https://preservamos.ar", "sitio web", target = "_blank")
+        )
+      ),
+      
+      # CC License
+      div(
+        style = "flex: 1; text-align: center; font-size: 12px;",
         HTML('<p xmlns:cc="http://creativecommons.org/ns#" xmlns:dct="http://purl.org/dc/terms/">
         <span property="dct:title">Mapa PreserVamos</span> por 
         <span property="cc:attributionName">PreserVamos</span> tiene una licencia 
@@ -183,17 +204,31 @@ ui <- fluidPage(
           <img style="height:22px!important;margin-left:3px;vertical-align:text-bottom;" src="https://mirrors.creativecommons.org/presskit/icons/nc.svg?ref=chooser-v1" alt="">
           <img style="height:22px!important;margin-left:3px;vertical-align:text-bottom;" src="https://mirrors.creativecommons.org/presskit/icons/sa.svg?ref=chooser-v1" alt="">
         </a>
+      </p>
+      <p style="margin: 0;">
+        Las fotografías utilizadas fueron tomadas de las fichas de ecorregiones de la 
+        <a href="https://www.sib.gob.ar/portal/wp-content/uploads/2021/10/fichas_ecorregiones.pdf" target="_blank" style="color: #007bff; text-decoration: underline;">
+          Administración de Parques Nacionales de Argentina
+        </a>.
       </p>')
-      )
-    ), 
-    div(
-      # Texto con enlace a la derecha del encabezado
-      style = "flex: 1; text-align: center; font-size: 12px; align-items: center; ",
-      p("Las fotografías fueron tomadas de las Fichas de Ecorregiones generadas por ",
-        a(href = "https://www.sib.gob.ar/portal/wp-content/uploads/2021/10/fichas_ecorregiones.pdf", "Parques Nacionales de Argentina", target = "_blank")
+      ),
+      
+      # "¿Querés saber cómo está hecho este mapa interactivo?"
+      div(
+        style = "flex: 1; text-align: right; font-size: 14px; margin-right: 20px;",
+        p("¿Querés saber cómo está hecho este mapa interactivo? "),
+        p(HTML('¡El código es abierto y lo podés ver <a href="https://github.com/jcochero/preservamos_mapa" target="_blank">acá!</a>')),
+        tags$a(
+          href = "https://github.com/jcochero/preservamos_mapa",  # Enlace a tu repositorio de GitHub
+          target = "_blank",
+          tags$img(
+            src = "https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png",  # Logo de GitHub
+            style = "height: 30px; margin-left: 5px; margin-bottom:10px; vertical-align: middle;display: inline-block"  # Ajustar tamaño del logo
+          )
+        )
       )
     )
-  )
+  ),
 )
 
 
@@ -217,8 +252,33 @@ server <- function(input, output, session) {
     
     # Permite cerrar el modal fácilmente
     easyClose = TRUE,
-    footer = modalButton("¡A explorar!")
+    footer = tagList(
+      actionButton("start_tutorial", "¿Cómo lo uso?"),
+      actionButton("explore_directly", "¡A explorar directamente!", class = "explore-button")
+    )
   ))
+  
+  
+  # Lanzar el tutorial después de cerrar el modal
+  observeEvent(input$start_tutorial, {
+    removeModal()
+    introjs(session, options = list(steps = list(
+      list(element = "#info_panel", 
+           intro = "Puedes seleccionar de aquí tu ecorregión, ¡o ver todos los datos del país! "),
+      list(element = "#corr_panel", 
+           intro = "¿Te interesa saber cómo se relaciona el índice de calidad ambiental con algún factor ambiental?"),
+      list(element = "#histo_panel", 
+           intro = "¡Mirá cómo es el estado ambiental de los cuerpos de agua en la zona que puedes ver en el mapa!"),
+      list(element = "#inat_panel", 
+           intro = "Y conocé la flora y fauna de tu zona del mapa, gracias a los participantes de ArgentiNat"),
+      list(element = "#footer", 
+           intro = "Hay información importante aquí abajo también ;)")
+    )))
+  })
+  # Si el usuario presiona "¡A explorar directamente!", simplemente cierra el modal
+  observeEvent(input$explore_directly, {
+    removeModal()
+  })
   
   # Función para crear un modal que muestra imágenes del taxón seleccionado
   show_modal <- function(taxon) {
@@ -247,6 +307,7 @@ server <- function(input, output, session) {
       footer = modalButton("Cerrar")  # Botón para cerrar el modal
     ))
   }
+
   
   # Función para obtener imágenes de iNaturalist según el taxón seleccionado
   get_images <- function(taxon) {
@@ -600,28 +661,29 @@ server <- function(input, output, session) {
   
  ##### IMAGENES DE ECORREGIONES #####
   ecoregion_logos <- list(
-    "Altos Andes" = "altos_andes.png",
-    "Puna" = "puna.png",
-    "Monte de Sierras y Bolsones" = "monte_sierras_bolsones.png",
-    "Selva de Yungas" = "selva_yungas.png",
-    "Chaco seco" = "chaco_seco.png",
-    "Chaco humedo" = "chaco_humedo.png",
-    "Selva Paranaense" = "selva_paranaense.png",
-    "Esteros del Ibera" = "esteros_ibera.png",
-    "Campos y Malezales" = "campos_y_malezales.png",
-    "Delta e islas del Parana" = "delta_islas_parana.png",
-    "Espinal" = "espinal.png",
-    "Pampa" = "pampa.png",
-    "Monte de llanuras y mesetas" = "monte_llanuras_mesetas.png",
-    "Estepa patagonica" = "estepa_patagonica.png",
-    "Bosques patagonicos" = "bosques_patagonicos.png"
+    "Altos Andes" = "altos_andes_nuevo.png",
+    "Puna" = "puna_nuevo.png",
+    "Monte de Sierras y Bolsones" = "monte_sierras_bolsones_nuevo.png",
+    "Selva de Yungas" = "selva_yungas_nuevo.png",
+    "Chaco seco" = "chaco_seco_nuevo.png",
+    "Chaco humedo" = "chaco_humedo_nuevo.png",
+    "Selva Paranaense" = "selva_paranaense_nuevo.png",
+    "Esteros del Ibera" = "esteros_ibera_nuevo.png",
+    "Campos y Malezales" = "campos_y_malezales_nuevo.png",
+    "Delta e islas del Parana" = "delta_islas_parana_nuevo.png",
+    "Espinal" = "espinal_nuevo.png",
+    "Pampa" = "pampa_nuevo.png",
+    "Monte de llanuras y mesetas" = "monte_llanuras_mesetas_nuevo.png",
+    "Estepa patagonica" = "estepa_patagonica_nuevo.png",
+    "Bosques patagonicos" = "bosques_patagonicos_nuevo.png",
+    "Todas las ecorregiones" = "nada.png"
   )
   
   observeEvent(input$selected_ecorregion, {
     #Cambia imagen de arriba basado en la ecorregión
     clicked_ecoregion <- input$selected_ecorregion
     
-    if (clicked_ecoregion != "Todas las ecorregiones"){
+    #if (clicked_ecoregion != "Todas las ecorregiones"){
         logo_file <- ecoregion_logos[[clicked_ecoregion]]
 
         if (file.exists(file.path("www", logo_file))) {
@@ -634,7 +696,7 @@ server <- function(input, output, session) {
             list(src = "www/default_logo.png", height = "auto", width = "100%")
           }, deleteFile = FALSE)
         }
-    }
+    #}
 
         zoom_reset(TRUE)  # Reset bounds when user selects a new ecoregion
   })
@@ -789,8 +851,8 @@ server <- function(input, output, session) {
           layerId = ~as.character(Indice),
           popup = ~paste(
             "<b>Indice:</b> ", Indice, "<br>",
-            "<b>Date:</b> ", formated_date, "<br>",
-            "<b>User:</b> ", ifelse(useremail == "" | is.na(useremail), "Anónimo", sub("@.*", "", useremail))  # Manejar correos electrónicos vacíos
+            "<b>Fecha:</b> ", formated_date, "<br>",
+            "<b>Participante:</b> ", ifelse(useremail == "" | is.na(useremail), "Anónimo", sub("@.*", "", useremail))  # Manejar correos electrónicos vacíos
           )
         ) %>%
         addLegend(
@@ -817,7 +879,7 @@ server <- function(input, output, session) {
     breaks <- seq(min(df$Indice, na.rm = TRUE), max(df$Indice, na.rm = TRUE), by = binwidth)
     
     # Define color bins
-    color_bins <- cut(df$Indice, 
+    color <- cut(df$Indice, 
                       breaks = c(-Inf, 20, 40, 60, 80, Inf), 
                       labels = c("red", "orange", "yellow", "green", "blue"))
     
@@ -828,7 +890,7 @@ server <- function(input, output, session) {
     p <- ggplot(df, aes(x = Indice)) +
       geom_histogram(
         binwidth = binwidth,
-        aes(fill = color_bins),  # Colorear las barras según el rango de Indice
+        aes(fill = color),  # Colorear las barras según el rango de Indice
         color = "black",
         show.legend = FALSE
       ) +

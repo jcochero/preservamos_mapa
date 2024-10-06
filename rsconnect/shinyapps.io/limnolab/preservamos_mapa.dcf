@@ -5,7 +5,7 @@ account: limnolab
 server: shinyapps.io
 hostUrl: https://api.shinyapps.io/v1
 appId: 12736800
-bundleId: 9134755
+bundleId: 9188825
 url: https://limnolab.shinyapps.io/preservamos_mapa/
 version: 1
 asMultiple: FALSE
