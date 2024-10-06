@@ -26,7 +26,7 @@ Sólo ve al sitio web del proyecto [PreserVamos](https://www.preservamos.ar), de
 
 El código de este mapa es abierto, y está comentado para que lo puedas utilizar con tus datos. Necesitarás crear un archivo "*config.ym*l", que tenga la siguiente estructura:\
 
-``` YARN
+``` yarn
 db_host: ip-de-tu-servidor
 db_user: usuario-de-tu-base-de-datos
 db_password: clave-de-tu-base-de-datos
